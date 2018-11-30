@@ -1,7 +1,10 @@
+const clientID = "";
+const secretID = ""; 
+
 const credentials = {
     client: {
-        id: "LINKEDIN_CLIENT_ID", // LINKEDIN_CLIENT_ID:   
-        secret: "LINKEDIN_CLIENT_SECRET", // LINKEDIN_CLIENT_SECRET:  
+        id: clientID, 
+        secret: secretID , 
     },
     auth: {
         tokenHost: 'https://linkedin.com',
@@ -47,26 +50,26 @@ app.get('/auth/linkedin/redirect', (req, res) => {
 app.get('/auth/linkedin/callback', (req, res) => {
 
 
-    //"https://www.linkedin.com/oauth/v2/accessToken?response_type=code&client_id=LINKEDIN_CLIENT_ID"
+    //"https://www.linkedin.com/oauth/v2/accessToken?response_type=code&client_id=86ri7bqortc55g"
 
-    console.log("BEFORE");
-
-    const data = {
-        url:"https://www.linkedin.com/oauth/v2/accessToken",
-        code: req.query.code,
-        grant_type: "authorization_code",
-        state: "some-cryptic-stuff-98471871987981247",
-        client_id:"LINKEDIN_CLIENT_ID"
-    };
-
+    // const data = {
+    //     url:"https://www.linkedin.com/oauth/v2/accessToken",
+    //     code: req.query.code,
+    //     grant_type: "authorization_code",
+    //     state: "some-cryptic-stuff-98471871987981247",
+    //     client_id:clientID,
+    //     redirect_uri: "http://localhost:3000",
+    // };
 
 
-    request.post(data, (err, response, body) => {
+
+
+    request.post("https://www.linkedin.com/oauth/v2/accessToken?response_type=code&client_id="+clientID+"&grant_type=authorization_code&redirect_uri=http://localhost:3000/auth/linkedin/callback&client_secret="+secretID+"&code=" +req.query.code+"", (err, response, body) => {
 
         const error = JSON.parse(body).error;
         const error_description = JSON.parse(body).error_description;
 
-        console.log(JSON.parse(body));
+        console.log("OINK___" + body);
         if (error) {
             return res.json({ success: false, msg: error_description });
         } else {
