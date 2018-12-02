@@ -1,5 +1,5 @@
-const clientID = "";
-const secretID = "";
+const clientID = ""; // LINKED_IN ClientID
+const secretID = ""; //LINKED_IN SecretID 
 
 const credentials = {
     client: {
@@ -13,13 +13,17 @@ const credentials = {
     }
 };
 
+//___________________________________________________________
 
-const querystring = require('querystring');
-const oauth2 = require('simple-oauth2')
+const request = require("request");
+const makeRequest = require('request-promise');
+const oauth2 = require('simple-oauth2').create(credentials)
 const express = require("express");
 const app = express();
-const request = require("request");
+const buildURL = require("build-url");
 app.use(express.static("public"));
+
+//___________________________________________________________
 
 
 app.get('/', (req, res) => {
@@ -33,7 +37,8 @@ app.get('/', (req, res) => {
 
 
 app.get('/auth/linkedin/redirect', (req, res) => {
-    const redirectUri = oauth2.create(credentials).authorizationCode.authorizeURL({
+
+    const redirectUri = oauth2.authorizationCode.authorizeURL({
         response_type: "code",
         redirect_uri: "http://localhost:3000/auth/linkedin/callback",
         state: "some-cryptic-stuff-98471871987981247"
@@ -46,42 +51,39 @@ app.get('/auth/linkedin/redirect', (req, res) => {
 });
 
 
-app.get('/auth/linkedin/callback', (req, res) => {
+app.get('/auth/linkedin/callback', async (req, res) => {
 
 
-    const data = {
-        response_type: "code",
-        client_id: clientID,
-        grant_type: "authorization_code",
-        redirect_uri: "http://localhost:3000/auth/linkedin/callback",
-        client_secret: secretID,
-        code: req.query.code,
-        state: "some-cryptic-stuff-98471871987981247"
+
+    var options = {
+        method: 'POST',
+        uri: "https://www.linkedin.com/oauth/v2/accessToken",
+     
+          qs:{  response_type: "code",
+            client_id: clientID,
+            grant_type: "authorization_code",
+            redirect_uri: "http://localhost:3000/auth/linkedin/callback",
+            client_secret: secretID,
+            code: req.query.code,
+            state: "some-cryptic-stuff-98471871987981247"
+        },
+  
+        json: true // Automatically stringifies the body to JSON
     };
 
 
-    let getToken = "https://www.linkedin.com/oauth/v2/accessToken?" + querystring.stringify(data);
+    try {
+        let result = await makeRequest(options);
+        console.log(result);
+        return res.json({success:true})
 
-    //_____________BEGIN full URL
-
-    //"https://www.linkedin.com/oauth/v2/accessToken?response_type=code&client_id="+clientID+"&grant_type=authorization_code&redirect_uri=http://localhost:3000/auth/linkedin/callback&client_secret="+secretID+"&code=" +req.query.code+""
-
-    //_____________END full URL
-
-    request.post(getToken, (err, response, body) => {
-
-        const error = JSON.parse(body).error;
-        const error_description = JSON.parse(body).error_description;
-
-        if (error) {
-            return res.json({ success: false, msg: error_description });
-        } else {
-            return res.json({ success: true });
-        }
-
-    });
+    } catch (err) {
+    
+        return res.json({ success: false, msg: err.message});; // TypeError: failed to fetch
+    }
 
 });
+
 
 
 
@@ -89,3 +91,8 @@ app.get('/auth/linkedin/callback', (req, res) => {
 app.listen(3000, function(err) {
     console.log('Server works');
 });
+
+
+// NOTES
+// Token POST URL
+//"https://www.linkedin.com/oauth/v2/accessToken?response_type=code&client_id="+clientID+"&grant_type=authorization_code&redirect_uri=http://localhost:3000/auth/linkedin/callback&client_secret="+secretID+"&code=" +req.query.code+""
