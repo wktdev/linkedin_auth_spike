@@ -1,5 +1,6 @@
-const clientID = ""; // LINKED_IN ClientID
-const secretID = ""; //LINKED_IN SecretID 
+const clientID = ""; // LINKEDIN ClientID
+const secretID = ""; //LINKEDIN SecretID 
+let token = "";
 
 const credentials = {
     client: {
@@ -20,6 +21,7 @@ const makeRequest = require('request-promise');
 const oauth2 = require('simple-oauth2').create(credentials)
 const express = require("express");
 const app = express();
+const buildURL = require("build-url");
 app.use(express.static("public"));
 
 //___________________________________________________________
@@ -52,10 +54,8 @@ app.get('/auth/linkedin/redirect', (req, res) => {
 
 app.get('/auth/linkedin/callback', async (req, res) => {
 
-
-
     var options = {
-        method: 'POST',
+        method: 'GET',
         uri: "https://www.linkedin.com/oauth/v2/accessToken",
      
           qs:{  response_type: "code",
@@ -72,17 +72,52 @@ app.get('/auth/linkedin/callback', async (req, res) => {
 
 
     try {
-        let result = await makeRequest(options);
-        console.log(result);
-        return res.json({success:true})
+        
+      token = await makeRequest(options);
 
-    } catch (err) {
-    
+      return res.json({success:true})
+
+      } catch (err) {
+
         return res.json({ success: false, msg: err.message});; // TypeError: failed to fetch
+   
     }
 
 });
 
+
+app.get("/user",async (req,res)=>{
+
+    console.log(token); // token object is available
+
+     var options = {
+        method: 'GET',
+        url: "https://api.linkedin.com/v2/me",
+        // documentation https://developer.linkedin.com/docs/oauth2#requests
+        headers: {
+          'Host': "api.linkedin.com",
+          'Connection': "Keep-Alive",
+          'Authorization': 'Bearer ' + token.access_token
+        },
+  
+        json: true // Automatically stringifies the body to JSON
+    };
+
+
+
+
+    try {
+        var response = await makeRequest(options);
+        return res.json({success:true})
+
+        } catch (err) {
+
+        return res.json({ success: false, msg: err.message});; // TypeError: failed to fetch
+    }
+
+
+    
+});
 
 
 
